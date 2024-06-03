@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        .navbar {
+            background-color: #333;
+            overflow: hidden;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+        }
+        .navbar a:hover {
+            background-color: #555;
+        }
+        .navbar .logo {
+            font-family: 'Lobster', cursive;
+            color: #FFD700;
+            font-size: 2em;
+            text-decoration: none;
+        }
+        .content {
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+        }
+        .profile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .profile-header h2 {
+            margin: 0;
+            color: #333;
+            font-size: 1.8em;
+        }
+        .profile-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .profile-info img {
+            border-radius: 50%;
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            margin-bottom: 20px;
+            border: 4px solid #fff;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .upload-button, .logout-button, .delete-button, .back-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+        .upload-button:hover, .logout-button:hover, .delete-button:hover, .back-button:hover {
+            background-color: #45a049;
+        }
+        #file-input {
+            display: none;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0, 0, 0);
+            background-color: rgba(0, 0, 0, 0.4);
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover, .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo">
+            MOVE TIKET BOOKING
+        </div>
+        <div class="menu">
+            <a href="index.html">Home</a>
+            <a href="tiket.html">Tiket</a>
+            <a href="tentangkami.html">Tentang Kami</a>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="profile-header">
+            <h2>Profile User</h2>
+        </div>
+
+        <div class="profile-info">
+            <img id="profile-pic" src="default-profile.png" alt="Profile Picture">
+            <p>Username: <span id="profile-username"></span></p>
+            <p>Email: <span id="profile-email"></span></p>
+            <p>Phone: <span id="profile-phone"></span></p>
+            <button class="upload-button" onclick="document.getElementById('file-input').click()">Unggah Foto</button>
+            <button class="delete-button" onclick="deletePhoto()">Hapus Foto</button>
+            <input type="file" id="file-input" accept="image/*" onchange="showCropperModal()">
+            <button class="back-button" onclick="goBack()">Kembali</button>
+            <button class="logout-button" id="logout-button">Logout</button>
+        </div>
+    </div>
+
+    <div id="cropper-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCropperModal()">&times;</span>
+            <img id="cropper-image" style="max-width: 100%;">
+            <button class="upload-button" onclick="cropAndUpload()">Crop dan Unggah</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+    <script>
+        var cropper;
+        var currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!currentUser) {
+                alert('Anda harus login terlebih dahulu.');
+                window.location.href = 'login.html';
+            } else {
+                document.getElementById('profile-username').textContent = currentUser.username;
+                document.getElementById('profile-email').textContent = currentUser.email;
+                document.getElementById('profile-phone').textContent = currentUser.phone;
+                document.getElementById('profile-pic').src = currentUser.profilePic || 'profil_deafold-removebg-preview.png'; // Menggunakan foto default jika tidak ada foto tersimpan
+            }
+
+            document.getElementById('logout-button').addEventListener('click', function() {
+                localStorage.removeItem('currentUser');
+                alert('Anda telah logout.');
+                window.location.href = 'login.html';
+            });
+        });
+
+        function showCropperModal() {
+            var fileInput = document.getElementById('file-input');
+            var file = fileInput.files[0];
+            var reader = new FileReader();
+
+            reader.onloadend = function() {
+                var img = document.getElementById('cropper-image');
+                img.src = reader.result;
+                var modal = document.getElementById('cropper-modal');
+                modal.style.display = "block";
+
+                if (cropper) {
+                    cropper.destroy();
+                }
+
+                cropper = new Cropper(img, {
+                    aspectRatio: 1,
+                    viewMode: 2,
+                    autoCropArea: 1,
+                });
+            };
+
+            if (file) {
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function closeCropperModal() {
+            var modal = document.getElementById('cropper-modal');
+            modal.style.display = "none";
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        }
+
+        function cropAndUpload() {
+            var canvas = cropper.getCroppedCanvas({
+                width: 150,
+                height: 150,
+            });
+            var croppedImage = canvas.toDataURL('image/png');
+            var currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            currentUser.profilePic = croppedImage;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            document.getElementById('profile-pic').src = croppedImage;
+            closeCropperModal();
+        }
+
+        function deletePhoto() {
+            var currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            currentUser.profilePic = null;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            document.getElementById('profile-pic').src = 'default-profile.png'; // Menggunakan foto default setelah dihapus
+        }
+
+        function goBack() {
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

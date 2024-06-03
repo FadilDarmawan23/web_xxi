@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container payment-container" id="payment-container">
+        <h2>Pilih Metode Pembayaran</h2>
+        <form id="payment-form">
+
+            <label for="payment-method">Metode Pembayaran:</label>
+            <select id="payment-method" name="payment-method" required>
+                <option value="Dana">Dana</option>
+                <option value="BRI">Bank BRI</option>
+                <option value="BCA">Bank BCA</option>
+                <option value="BNI">Bank BNI</option>
+                <option value="GoPay">GoPay</option>
+                <option value="ShopeePay">ShopeePay</option>
+                <option value="Ovo">Ovo</option>
+            </select>
+
+            <button type="submit">Lanjutkan Pembayaran</button>
+        </form>
+    </div>
+    <script>
+        // Function to generate ticket ID
+        function generateTicketID() {
+            return 'TICKET-' + Math.floor(Math.random() * 1000000);
+        }
+
+        // Function to calculate total amount
+        function calculateTotalAmount() {
+            const quantity = 1; // Default to 1 ticket
+            const ticketPrice = 100000; // Assuming each ticket costs 100,000 IDR
+            return quantity * ticketPrice;
+        }
+
+        // Function to save transaction info to localStorage
+        function saveTransaction(ticketID, totalAmount, currentUser) {
+            const transaction = {
+                ticketID: ticketID,
+                totalAmount: totalAmount,
+                user: currentUser.name,
+                paymentMethod: document.getElementById('payment-method').value
+            };
+            localStorage.setItem('transaction', JSON.stringify(transaction));
+        }
+
+        // Handle payment form submission
+        document.getElementById('payment-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const paymentMethod = document.getElementById('payment-method').value;
+            const ticketID = generateTicketID();
+            const totalAmount = calculateTotalAmount();
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+            if (!currentUser) {
+                alert('Silakan login terlebih dahulu');
+                return;
+            }
+
+            // Save transaction info to localStorage
+            saveTransaction(ticketID, totalAmount, currentUser);
+
+            // Simulate payment process
+            if (paymentMethod === 'Dana' || paymentMethod === 'GoPay' ||
+                paymentMethod === 'ShopeePay' || paymentMethod === 'Ovo') {
+                alert(`Pembayaran berhasil menggunakan ${paymentMethod}. \n\nRincian Pembayaran:\n- ID Tiket: ${ticketID}\n- Jumlah: ${totalAmount} IDR\n- Pengguna: ${currentUser.name}`);
+                // Redirect to ticket.html
+                window.location.href = 'tiket.html';
+            } else {
+                alert(`Silakan lakukan transfer manual ke rekening ${paymentMethod}. \n\nRincian Pembayaran:\n- ID Tiket: ${ticketID}\n- Jumlah: ${totalAmount} IDR\n- Pengguna: ${currentUser.name}`);
+                // Provide bank account details and further instructions
+            }
+        });
+    </script>
+</body>
+</html>

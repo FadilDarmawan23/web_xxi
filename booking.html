@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Tiket Bioskop</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1, h2 {
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input[type="datetime-local"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .seats {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .seat {
+            width: 40px;
+            height: 40px;
+            margin: 5px;
+            background-color: #ccc;
+            text-align: center;
+            line-height: 40px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .seat.available {
+            background-color: #a0ffa0;
+        }
+
+        .seat.selected {
+            background-color: #4CAF50;
+            color: #fff;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .home-button {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            text-decoration: none;
+            color: #333;
+            border: 1px solid #333;
+            padding: 10px 20px;
+            border-radius: 4px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .home-button:hover {
+            background-color: #333;
+            color: #fff;
+        }
+
+        .notification {
+            display: none;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #ffdddd;
+            color: #d8000c;
+        }
+
+        .payment-container {
+            display: none;
+            margin-top: 20px;
+        }
+
+        /* Riwayat Transaksi */
+
+        .transaction {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .transaction p {
+            margin: 5px 0;
+        }
+
+        .button-container {
+            text-align: center;
+        }
+
+        .back-button {
+            display: inline-block;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .back-button:hover {
+            background-color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Booking Tiket Bioskop</h1>
+        <form id="booking-form">
+            <div class="notification" id="notification"></div>
+            
+            <label for="date">Tanggal Pesan:</label>
+            <input type="datetime-local" id="date" name="date" required>
+            
+            <label for="quantity">Jumlah Tiket:</label>
+            <input type="number" id="quantity" name="quantity" min="1" max="10" required>
+
+            <label for="location">Pilih Lokasi Bioskop:</label>
+            <select id="location" name="location">
+                <option value="TASIK XXI - Mall Asia Plaza">TASIK XXI - Mall Asia Plaza</option>
+                <option value="TRANSMART TASIKMALAYA XXI - Transmart">TRANSMART TASIKMALAYA XXI - Transmart</option>
+            </select>
+
+            <label for="seat">Pilih Kursi:</label>
+            <div class="seats" id="seats"></div>
+
+            <button type="submit">Pesan Tiket</button>
+        </form>
+        <a href="index.html" class="home-button">Kembali</a>
+    </div>
+
+    <script>
+        // Generate daftar kursi
+        // Generate daftar kursi
+const seatsContainer = document.getElementById('seats');
+const rows = 5;
+const seatsPerRow = 10;
+
+for (let i = 1; i <= rows; i++) {
+    for (let j = 1; j <= seatsPerRow; j++) {
+        const seatNumber = (i * seatsPerRow) - (seatsPerRow - j);
+        const seatElement = document.createElement('div');
+        seatElement.classList.add('seat', 'available');
+        seatElement.textContent = seatNumber;
+        seatElement.addEventListener('click', () => {
+            toggleSeatSelection(seatElement);
+        });
+        seatsContainer.appendChild(seatElement);
+    }
+}
+
+            
+        
+        // Set current date and time to the date input field
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateInput = document.getElementById('date');
+            const now = new Date();
+            const wibOffset = 7 * 60; // WIB is UTC+7
+            const localOffset = now.getTimezoneOffset();
+            const wibTime = new Date(now.getTime() + (wibOffset + localOffset) * 60000);
+            const formattedDateTime = wibTime.toISOString().slice(0, 16);
+            dateInput.value = formattedDateTime;
+        });
+
+        // Handle seat selection
+        function toggleSeatSelection(seatElement) {
+            const quantityInput = document.getElementById('quantity');
+            
+            const quantity = parseInt(quantityInput.value);
+    
+            if (!quantity) {
+                showNotification('Silakan masukkan jumlah tiket terlebih dahulu.');
+                return;
+            }
+    
+            const selectedSeats = document.querySelectorAll('.seat.selected').length;
+    
+            if (seatElement.classList.contains('selected')) {
+                seatElement.classList.remove('selected');
+            } else {
+                if (selectedSeats < quantity) {
+                    seatElement.classList.add('selected');
+                } else {
+                    showNotification(`Anda hanya dapat memilih ${quantity} kursi.`);
+                }
+            }
+        }
+
+        // Handle form submission
+        document.getElementById('booking-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const date = document.getElementById('date').value;
+            const quantity = document.getElementById('quantity').value;
+            const location = document.getElementById('location').value;
+            const selectedSeats = document.querySelectorAll('.seat.selected');
+
+            const selectedSeatNumbers = Array.from(selectedSeats).map(seat => seat.textContent);
+
+            if (selectedSeatNumbers.length !== parseInt(quantity)) {
+                showNotification(`Silakan pilih tepat ${quantity} kursi!`);
+                return;
+            }
+
+            // Generate ticket ID
+            const ticketID = generateTicketID();
+
+            // Retrieve logged in user
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) {
+                showNotification('Silakan login terlebih dahulu');
+                return;
+            }
+
+            // Display booking details
+            const bookingDetails = `
+                Tanggal Pesan: ${date}
+                Jumlah Tiket: ${quantity}
+                Lokasi Bioskop: ${location}
+                Nomor Kursi: ${selectedSeatNumbers.join(', ')}
+                ID Tiket: ${ticketID}
+                Username: ${currentUser.username}
+            `;
+            showNotification(bookingDetails, true);
+
+            // Save ticket details to localStorage
+            saveTicketDetails(date, quantity, location, selectedSeatNumbers, ticketID, currentUser.username);
+
+            // Save transaction to localStorage
+            const transaction = {
+                date: date,
+                quantity: quantity,
+                location: location,
+                seats: selectedSeatNumbers,
+                ticketID: ticketID,
+                username: currentUser.username
+            };
+            saveTransactionToLocalStorage(transaction);
+
+            // Show payment options
+            window.location.href = 'payment.html';
+        });
+
+        // Function to show notifications
+        function showNotification(message, isSuccess = false) {
+            const notificationElement = document.getElementById('notification');
+            notificationElement.style.display = 'block';
+            notificationElement.textContent = message;
+            notificationElement.style.backgroundColor = isSuccess ? '#ddffdd' : '#ffdddd';
+            notificationElement.style.color = isSuccess ? '#4CAF50' : '#d8000c';
+        }
+
+        // Function to generate a random ticket ID
+        function generateTicketID() {
+            return 'TIKET-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+        }
+
+        // Function to save ticket details to localStorage
+        function saveTicketDetails(date, quantity, location, selectedSeatNumbers, ticketID, username) {
+            const ticketDetails = {
+                date,
+                quantity,
+                location,
+                seats: selectedSeatNumbers,
+                ticketID,
+                username
+            };
+            localStorage.setItem(ticketID, JSON.stringify(ticketDetails));
+        }
+
+        // Function to retrieve and display transaction history
+        function displayTransactionHistory() {
+            const transactionList = document.getElementById('transaction-list');
+            const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+            if (transactions.length === 0) {
+                transactionList.innerHTML = '<p>Tidak ada transaksi yang tersimpan.</p>';
+                return;
+            }
+
+            transactionList.innerHTML = '';
+            transactions.forEach(transaction => {
+                const transactionElement = document.createElement('div');
+                transactionElement.classList.add('transaction');
+                transactionElement.innerHTML = `
+                    <p><strong>Tanggal Pesan:</strong> ${transaction.date}</p>
+                    <p><strong>Jumlah Tiket:</strong> ${transaction.quantity}</p>
+                    <p><strong>Lokasi Bioskop:</strong> ${transaction.location}</p>
+                    <p><strong>Nomor Kursi:</strong> ${transaction.seats.join(', ')}</p>
+                    <p><strong>ID Tiket:</strong> ${transaction.ticketID}</p>
+                    <p><strong>Username:</strong> ${transaction.username}</p>
+                `;
+                transactionList.appendChild(transactionElement);
+            });
+        }
+
+        // Save transaction to localStorage
+        function saveTransactionToLocalStorage(transaction) {
+            const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            transactions.push(transaction);
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+        }
+
+        // Display transaction history when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            displayTransactionHistory();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riwayat Transaksi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        .transaction {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .transaction p {
+            margin: 5px 0;
+        }
+
+        .button-container {
+            text-align: center;
+        }
+
+        .back-button {
+            display: inline-block;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .back-button:hover {
+            background-color: #555;
+        }
+
+        .use-button {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .use-button:hover {
+            background-color: #45a049;
+        }
+
+        #barcode {
+            display: none;
+            text-align: center;
+            position: relative;
+            margin-top: 20px;
+        }
+
+        #barcode img {
+            width: 200px;
+            height: auto;
+        }
+
+        #close-button {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Riwayat Transaksi</h2>
+        <div id="transaction-list"></div>
+        <div class="button-container">
+            <a href="index.html" class="back-button">Kembali</a>
+        </div>
+    </div>
+
+    <div id="barcode">
+        <img id="barcode-image" src="" alt="Barcode">
+        <div id="close-button">
+            <button id="close-barcode-button">Selesai</button>
+        </div>
+    </div>
+
+    <script>
+        // Function to retrieve and display transaction history
+        function displayTransactionHistory() {
+            const transactionList = document.getElementById('transaction-list');
+            const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+            if (transactions.length === 0) {
+                transactionList.innerHTML = '<p>Tidak ada transaksi yang tersimpan.</p>';
+                return;
+            }
+
+            transactionList.innerHTML = '';
+            transactions.forEach(transaction => {
+                const transactionElement = document.createElement('div');
+                transactionElement.classList.add('transaction');
+                transactionElement.innerHTML = `
+                    <p><strong>Tanggal Pesan:</strong> ${transaction.date}</p>
+                    <p><strong>Jumlah Tiket:</strong> ${transaction.quantity}</p>
+                    <p><strong>Lokasi Bioskop:</strong> ${transaction.location}</p>
+                    <p><strong>Nomor Kursi:</strong> ${transaction.seats.join(', ')}</p>
+                    <p><strong>ID Tiket:</strong> ${transaction.ticketID}</p>
+                    <p><strong>Username:</strong> ${transaction.username}</p>
+                    <button class="use-button" data-ticket-id="${transaction.ticketID}">Gunakan Tiket</button>
+                `;
+                transactionList.appendChild(transactionElement);
+            });
+        }
+
+        // Save transaction to localStorage
+        function saveTransactionToLocalStorage(transaction) {
+            const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            transactions.push(transaction);
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+        }
+
+        // Function to update transaction status to "Tiket Sudah digunakan"
+        function updateTransactionStatus(ticketID) {
+            const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            const updatedTransactions = transactions.map(transaction => {
+                if (transaction.ticketID === ticketID) {
+                    transaction.status = 'Tiket Sudah digunakan';
+                }
+                return transaction;
+            });
+            localStorage.setItem('transactions', JSON.stringify(updatedTransactions));
+        }
+
+        // Function to generate barcode image
+        function generateBarcode(ticketID) {
+            // Here you can implement your own logic to generate the barcode image
+            // For demonstration purposes, I'll just set a placeholder URL
+            const barcodeImageURL = `https://api.qrserver.com/v1/create-qr-code/?data=${ticketID}&size=200x200`;
+
+            // Display the barcode image
+            const barcodeImage = document.getElementById('barcode-image');
+            barcodeImage.setAttribute('src', barcodeImageURL);
+
+            // Show the barcode
+            document.getElementById('barcode').style.display = 'block';
+        }
+
+        // Handle using ticket
+        function useTicket(ticketID) {
+            // Update transaction status
+            updateTransactionStatus(ticketID);
+
+            // Display updated transaction history
+            displayTransactionHistory();
+
+            // Generate and display barcode
+            generateBarcode(ticketID);
+        }
+
+        // Function to handle completing the ticket usage
+        function completeTicketUsage(ticketID) {
+            // Update transaction status
+            updateTransactionStatus(ticketID);
+
+            // Display updated transaction history
+            displayTransactionHistory();
+
+            // Hide barcode
+            document.getElementById('barcode').style.display = 'none';
+        }
+
+        // Handle completing ticket usage when clicking the "Selesai" button
+        document.getElementById('close-barcode-button').addEventListener('click', function() {
+            const ticketID = document.getElementById('barcode-image').getAttribute('data-ticket-id');
+            completeTicketUsage(ticketID);
+        });
+
+        // Function to remove used tickets
+        function removeUsedTickets() {
+            const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            const updatedTransactions = transactions.filter(transaction => transaction.status !== 'Tiket Sudah digunakan');
+            localStorage.setItem('transactions', JSON.stringify(updatedTransactions));
+        }
+
+        // Call the removeUsedTickets function when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            displayTransactionHistory();
+
+            // Add event listener for "Gunakan Tiket" button
+            const transactionList = document.getElementById('transaction-list');
+            transactionList.addEventListener('click', function(event) {
+                if (event.target && event.target.classList.contains('use-button')) {
+                    const ticketID = event.target.dataset.ticketId;
+                    useTicket(ticketID);
+                }
+            });
+
+            // Remove used tickets
+            removeUsedTickets();
+        });
+    </script>
+</body>
+</html>
